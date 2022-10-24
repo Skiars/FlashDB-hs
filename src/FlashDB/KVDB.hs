@@ -13,6 +13,7 @@ module FlashDB.KVDB
 where
 
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import Data.ByteString.Unsafe (unsafePackCStringLen, unsafeUseAsCStringLen)
 import Foreign.C
 import Foreign.ForeignPtr
@@ -75,6 +76,12 @@ instance Value BS.ByteString where
   get' db k = do
     res <- getDBData db k
     mapM unsafePackCStringLen res
+
+instance Value BSL.ByteString where
+  set' db k v = set' db k (BSL.toStrict v)
+  get' db k = do
+    v <- get' db k
+    return (BSL.fromStrict <$> v)
 
 open :: String -> FilePath -> Int -> Int -> IO KVDB
 open name path sectorSize dbSize = do
